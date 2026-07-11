@@ -1,0 +1,40 @@
+# Phase 5 - Embedded Firmware (STM32H7)
+
+embedded:
+  platform: stm32h7
+  rtos: freertos
+  cpu_mhz: 480
+  state_update_hz: 20
+  camera:
+    width: 640
+    height: 480
+    fps: 30
+    interface: dcmi
+  imu:
+    model: BMI088
+    interface: spi
+    sample_rate_hz: 200
+  bnn:
+    interface: spi_dma
+    clock_hz: 20000000
+    max_keypoints: 200
+  factor_graph:
+    backend: g2o_embedded  # g2o_embedded | gtsam_embedded
+    memory_budget_bytes: 2097152
+    max_poses: 12
+    max_landmarks: 80
+    max_opt_ms: 5
+  network:
+    primary: uwb
+    fallback: wifi
+    max_bandwidth_bps: 51200
+  tasks:
+    camera_priority: 5
+    bnn_priority: 4
+    vio_priority: 3
+    sharing_priority: 2
+    profiler_priority: 1
+  acceptance:
+    state_update_hz: 20
+    fg_memory_bytes: 2097152
+    stability_hours: 1

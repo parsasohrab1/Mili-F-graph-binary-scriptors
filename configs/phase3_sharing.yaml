@@ -1,0 +1,26 @@
+# Phase 4 - FR-3: Event-Driven Cooperative Landmark Sharing
+
+phase3_sharing:
+  network:
+    max_drones: 12
+    base_port: 7700
+    max_bandwidth_bytes_per_sec: 51200  # 50 KB/s
+    max_network_latency_ms: 50
+    max_sharing_latency_ms: 20
+  trigger:
+    uncertainty_threshold_m: 0.3
+    use_covariance: true
+  compression:
+    bytes_per_landmark: 20
+    descriptor_bits: 128
+  sharing:
+    min_landmarks: 3
+    max_landmarks: 15
+  acceptance:
+    bandwidth_reduction_pct: 70.0
+    accuracy_improvement_pct: 40.0
+    sharing_latency_ms: 20.0
+  simulation:
+    num_drones: 6
+    steps: 100
+    continuous_share_interval: 1  # every step for baseline comparison

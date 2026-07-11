@@ -1,0 +1,33 @@
+# Phase 3 - FR-1: BNN Binary Descriptor Extraction
+
+phase3:
+  bnn:
+    enabled: true
+    transport: spi  # spi | simulated
+    spi:
+      bus_id: 0
+      cs_pin: 10
+      clock_hz: 20000000
+      dma_channel: 1
+      mode: 0
+    protocol_version: 1
+    max_keypoints: 200
+    descriptor_bits: 128
+    image_width: 640
+    image_height: 480
+  fallback:
+    enabled: true
+    descriptor_type: orb  # orb | brief
+    auto_select: true  # use fallback when BNN unavailable
+  matching:
+    hamming_threshold: 50
+    ratio_test: 0.75
+    use_popcount_lut: true
+  acceptance:
+    extraction_time_ms: 2.0
+    repeatability_pct: 90.0
+    energy_mj_per_frame: 5.0
+  energy_model:
+    base_mj: 0.5
+    per_keypoint_mj: 0.02
+    per_bit_mj: 0.001

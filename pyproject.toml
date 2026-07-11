@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mili-vio"
+version = "0.1.0"
+description = "Cooperative VIO with Factor-Graph Optimization and Binary Descriptors"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "scipy>=1.10.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+]
+vio = [
+    "opencv-python>=4.8.0",
+    "matplotlib>=3.7.0",
+]
+gtsam = [
+    "mili-vio[vio]",
+    # Linux: pip install gtsam (when available for your platform)
+]
+
+[project.scripts]
+mili-vio-generate = "mili_vio.cli:main"
+mili-vio-benchmark = "mili_vio.benchmark.cli:main"
+mili-vio-fr2 = "mili_vio.factor_graph.cli:main"
+mili-vio-fr1 = "mili_vio.descriptors.cli:main"
+mili-vio-fr3 = "mili_vio.sharing.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

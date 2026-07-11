@@ -1,0 +1,40 @@
+# Phase 2 - FR-2: Full Factor-Graph State Estimation
+
+phase2:
+  sliding_window:
+    max_poses: 12
+    max_landmarks: 80
+    memory_budget_bytes: 2097152  # 2 MB
+  optimization:
+    max_time_ms: 5.0
+    max_iterations: 8
+    convergence_tol: 1.0e-4
+  accuracy:
+    position_error_target_m: 0.5
+    orientation_error_target_deg: 2.0
+  scenarios:
+    - urban_canyon
+    - forest_dense
+    - indoor_complex
+    - open_field
+  scenario_noise:
+    urban_canyon:
+      visual_std_px: 1.5
+      imu_gyro_std: 0.008
+      imu_accel_std: 0.12
+    forest_dense:
+      visual_std_px: 2.0
+      imu_gyro_std: 0.010
+      imu_accel_std: 0.15
+    indoor_complex:
+      visual_std_px: 2.5
+      imu_gyro_std: 0.012
+      imu_accel_std: 0.18
+    open_field:
+      visual_std_px: 0.8
+      imu_gyro_std: 0.005
+      imu_accel_std: 0.08
+  loop_closure:
+    enabled: true
+    min_keyframe_gap: 8
+    retrospective_optimize: true

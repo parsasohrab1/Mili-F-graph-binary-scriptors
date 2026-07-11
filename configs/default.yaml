@@ -1,0 +1,51 @@
+# Cooperative VIO - Default Configuration (SRS-aligned)
+
+system:
+  max_drones_per_group: 12
+  state_update_rate_hz: 20
+  max_bandwidth_bytes_per_sec: 51200  # 50 KB/s
+
+hardware:
+  image_width: 640
+  image_height: 480
+  camera_fps: 30
+  descriptor_bits: 128
+  max_keypoints: 200
+  factor_graph_memory_mb: 2
+
+accuracy:
+  position_error_target_m: 0.5
+  orientation_error_target_deg: 2.0
+  uncertainty_threshold_m: 0.3
+
+performance:
+  descriptor_extraction_max_ms: 2
+  optimization_max_ms: 5
+  sharing_latency_max_ms: 20
+  network_latency_max_ms: 50
+
+data_generation:
+  seed: 2026
+  num_groups: 15
+  drones_per_group: 6
+  time_steps: 600
+  base_timestamp: 1700000000
+  scenarios:
+    - urban_canyon
+    - forest_dense
+    - indoor_complex
+    - open_field
+  communication_qualities:
+  - name: clear
+    probability: 0.5
+  - name: intermittent
+    probability: 0.3
+  - name: jammed
+    probability: 0.2
+
+sharing:
+  landmark_bytes_compressed: 20
+  min_landmarks_shared: 3
+  max_landmarks_shared: 15
+  improvement_factor_min: 0.2
+  improvement_factor_max: 0.35

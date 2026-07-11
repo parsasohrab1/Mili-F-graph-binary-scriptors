@@ -1,0 +1,28 @@
+# Phase 1 - Real VIO algorithms (desktop)
+
+phase1:
+  dataset_root: data/datasets
+  euroc_sequences:
+    - MH_01_easy
+    - MH_02_easy
+    - V1_01_easy
+  tum_vi_sequences:
+    - dataset-room1_512_16
+  max_frames: 500
+  keyframe_interval: 5
+  min_matches: 20
+  loop_closure:
+    enabled: true
+    min_keyframe_gap: 30
+    hamming_threshold: 50
+    min_loop_matches: 15
+  benchmark:
+    output_dir: data/benchmarks
+    acceptance_position_error_m: 1.0
+    acceptance_ekf_improvement_pct: 30.0
+  camera:
+    fx: 458.654
+    fy: 457.296
+    cx: 367.215
+    cy: 248.375
+    baseline: 0.11
