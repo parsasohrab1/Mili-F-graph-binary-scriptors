@@ -11,7 +11,7 @@ import numpy as np
 import yaml
 from numpy.typing import NDArray
 
-from mili_vio.descriptors.bnn.driver import BNNDriver, EnergyModel, SPIDMADriver, SimulatedBNNDriver, SPIConfig
+from mili_vio.descriptors.bnn.driver import BNNDriver, EnergyModel, SPIDMADriver, SimulatedBNNDriver, SPIConfig, create_bnn_driver
 from mili_vio.descriptors.bnn.protocol import BNNStatus
 from mili_vio.types import BinaryDescriptor
 
@@ -73,19 +73,8 @@ class BNNDescriptorAPI:
 
         if driver is not None:
             self._driver = driver
-        elif bnn_cfg.get("transport") == "simulated" or bnn_cfg.get("enabled", True):
-            spi = bnn_cfg.get("spi", {})
-            self._driver = SPIDMADriver(
-                SPIConfig(
-                    bus_id=spi.get("bus_id", 0),
-                    cs_pin=spi.get("cs_pin", 10),
-                    clock_hz=spi.get("clock_hz", 20_000_000),
-                    dma_channel=spi.get("dma_channel", 1),
-                ),
-                backend=SimulatedBNNDriver(self.energy_model),
-            )
         else:
-            self._driver = SimulatedBNNDriver(self.energy_model)
+            self._driver = create_bnn_driver(self._cfg)
 
         self._fallback = None
         if p3.get("fallback", {}).get("enabled", True):
@@ -110,6 +99,10 @@ class BNNDescriptorAPI:
 
         if response.status != BNNStatus.OK and self._fallback:
             return self._extract_fallback(image, limit, start)
+
+        # Chip-reported timing is authoritative for SRS (Product 1 BNN)
+        if response.extraction_time_us > 0:
+            elapsed_ms = response.extraction_time_us / 1000.0
 
         descriptors: list[BinaryDescriptor] = []
         keypoints_uv: list[NDArray[np.float64]] = []
@@ -176,9 +169,15 @@ class BNNDescriptorAPI:
         repeatabilities: list[float] = []
 
         for i, img in enumerate(images):
+            response = self._driver.extract(img, self.max_keypoints)
+            chip_ms = response.extraction_time_us / 1000.0 if response.extraction_time_us else 0.0
             result = self.extract(img)
-            times.append(result.extraction_time_ms)
-            energies.append(result.energy_mj)
+            times.append(chip_ms if chip_ms > 0 else result.extraction_time_ms)
+            energies.append(
+                response.energy_uj / 1000.0
+                if response.energy_uj
+                else result.energy_mj
+            )
             if i > 0:
                 rep = self.measure_repeatability(images[i - 1], img)
                 repeatabilities.append(rep)

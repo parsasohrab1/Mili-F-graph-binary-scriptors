@@ -35,6 +35,8 @@ mili-vio-benchmark = "mili_vio.benchmark.cli:main"
 mili-vio-fr2 = "mili_vio.factor_graph.cli:main"
 mili-vio-fr1 = "mili_vio.descriptors.cli:main"
 mili-vio-fr3 = "mili_vio.sharing.cli:main"
+mili-vio-run = "mili_vio.runtime.cli:main"
+mili-vio-validate = "mili_vio.validation.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -42,3 +44,6 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+markers = [
+    "slow: long-running integration tests (excluded from default CI)",
+]

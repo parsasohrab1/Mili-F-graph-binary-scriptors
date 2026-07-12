@@ -1,26 +1,37 @@
 #include "mili/drivers/camera_dcmi.h"
+#include "mili/hal/dcmi_hal.h"
 #include <string.h>
 
-static mili_camera_callback_t s_cb;
-static void *s_user;
-static int s_running;
+static mili_camera_callback_t s_app_cb;
+static void *s_app_user;
 
-int mili_camera_init(void) { return 0; }
+static void dcmi_forward_cb(const mili_camera_frame_t *frame, void *user)
+{
+    (void)user;
+    if (s_app_cb) s_app_cb(frame, s_app_user);
+}
+
+int mili_camera_init(void)
+{
+    return mili_dcmi_hal_init();
+}
 
 int mili_camera_start(mili_camera_callback_t cb, void *user)
 {
-    s_cb = cb;
-    s_user = user;
-    s_running = 1;
-    return 0;
+    s_app_cb = cb;
+    s_app_user = user;
+    return mili_dcmi_hal_start_dma(dcmi_forward_cb, NULL);
 }
 
-void mili_camera_stop(void) { s_running = 0; }
+void mili_camera_stop(void)
+{
+    mili_dcmi_hal_stop();
+}
 
 int mili_camera_capture(mili_camera_frame_t *frame)
 {
     if (!frame) return -1;
-    return mili_camera_sim_fill(frame, frame->frame_id);
+    return mili_dcmi_hal_capture_sync(frame);
 }
 
 int mili_camera_sim_fill(mili_camera_frame_t *frame, uint32_t frame_id)
@@ -29,6 +40,5 @@ int mili_camera_sim_fill(mili_camera_frame_t *frame, uint32_t frame_id)
     memset(frame->data, (uint8_t)(frame_id & 0xFF), MILI_CAM_FRAME_BYTES);
     frame->frame_id = frame_id;
     frame->timestamp_us = (uint64_t)frame_id * 33333ULL;
-    if (s_running && s_cb) s_cb(frame, s_user);
-    return 0;
+    return mili_dcmi_hal_capture_sync(frame);
 }

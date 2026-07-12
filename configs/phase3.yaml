@@ -3,13 +3,21 @@
 phase3:
   bnn:
     enabled: true
-    transport: spi  # spi | simulated
+    # Transport to Product 1 BNN chip:
+    #   simulated | loopback — dev/CI (protocol loopback)
+    #   spidev           — Linux /dev/spidev{bus}.{cs}
+    #   serial           — USB-UART bridge (set serial_port)
+    transport: simulated
+    target_time_us: 1500  # chip budget for sim (< 2 ms SRS)
     spi:
       bus_id: 0
-      cs_pin: 10
+      cs_pin: 0
       clock_hz: 20000000
       dma_channel: 1
       mode: 0
+      device_path: ""  # optional override e.g. /dev/spidev0.0
+    serial_port: ""    # e.g. COM3 or /dev/ttyUSB0
+    serial_baud: 2000000
     protocol_version: 1
     max_keypoints: 200
     descriptor_bits: 128
@@ -18,7 +26,7 @@ phase3:
   fallback:
     enabled: true
     descriptor_type: orb  # orb | brief
-    auto_select: true  # use fallback when BNN unavailable
+    auto_select: true
   matching:
     hamming_threshold: 50
     ratio_test: 0.75

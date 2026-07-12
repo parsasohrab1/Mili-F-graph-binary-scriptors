@@ -41,18 +41,23 @@ class BNNFrame:
     payload: bytes
     flags: int = 0
 
+    # Image already loaded in shared DMA buffer (Product 1)
+    FLAG_IMAGE_DMA: int = 0x01
+
     def encode(self) -> bytes:
+        plen = min(len(self.payload), 0xFFFF)
         header = struct.pack(
             ">HBBHBB",
             PROTOCOL_MAGIC,
             int(self.command),
-            len(self.payload),
+            plen,
             self.sequence & 0xFF,
-            self.flags,
+            self.flags & 0xFF,
             0,
         )
-        checksum = sum(header[:-1] + self.payload) & 0xFF
-        return header[:-1] + bytes([checksum]) + self.payload
+        payload = self.payload[:plen]
+        checksum = sum(header[:-1] + payload) & 0xFF
+        return header[:-1] + bytes([checksum]) + payload
 
     @classmethod
     def decode(cls, data: bytes) -> BNNFrame:

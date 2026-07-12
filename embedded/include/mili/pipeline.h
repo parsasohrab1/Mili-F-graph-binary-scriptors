@@ -27,6 +27,8 @@ int mili_pipeline_on_sharing_tick(mili_pipeline_t *pipe);
 const mili_state_estimate_t *mili_pipeline_latest_state(const mili_pipeline_t *pipe);
 const mili_profiler_t *mili_pipeline_profiler(const mili_pipeline_t *pipe);
 uint32_t mili_pipeline_state_updates(const mili_pipeline_t *pipe);
+void mili_pipeline_set_uptime_sec(mili_pipeline_t *pipe, uint32_t sec);
+void mili_pipeline_profiler_tick(mili_pipeline_t *pipe);
 void mili_pipeline_memory_report(const mili_pipeline_t *pipe, mili_memory_report_t *out);
 
 #endif

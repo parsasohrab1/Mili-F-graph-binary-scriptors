@@ -18,7 +18,7 @@ phase1:
     min_loop_matches: 15
   benchmark:
     output_dir: data/benchmarks
-    acceptance_position_error_m: 1.0
+    acceptance_position_error_m: 0.5
     acceptance_ekf_improvement_pct: 30.0
   camera:
     fx: 458.654

@@ -107,3 +107,6 @@ class GtsamFactorGraph:
 
 def create_factor_graph() -> GtsamFactorGraph:
     return GtsamFactorGraph()
+
+
+GTSAM_AVAILABLE = HAS_GTSAM

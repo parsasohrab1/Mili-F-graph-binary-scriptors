@@ -110,7 +110,8 @@ int mili_pipeline_on_vio_tick(mili_pipeline_t *pipe)
     mili_profiler_begin(MILI_PROF_VIO);
 
     mili_imu_sample_t imu;
-    mili_imu_sim_fill(&imu, pipe->pending_frame.timestamp_us);
+    imu.timestamp_us = pipe->pending_frame.timestamp_us;
+    mili_imu_read(&imu);
 
     mili_pose_t pose = {{0, 0, 0}, {0, 0, 0}};
     uint16_t prev = mili_fg_num_poses(pipe->fg);
@@ -184,4 +185,14 @@ const mili_state_estimate_t *mili_pipeline_latest_state(const mili_pipeline_t *p
 const mili_profiler_t *mili_pipeline_profiler(const mili_pipeline_t *pipe)
 {
     return pipe ? &pipe->prof : NULL;
+}
+
+void mili_pipeline_set_uptime_sec(mili_pipeline_t *pipe, uint32_t sec)
+{
+    if (pipe) pipe->prof.uptime_sec = sec;
+}
+
+void mili_pipeline_profiler_tick(mili_pipeline_t *pipe)
+{
+    if (pipe) mili_profiler_tick_second(&pipe->prof);
 }

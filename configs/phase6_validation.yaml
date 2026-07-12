@@ -1,0 +1,47 @@
+# Phase 6 — SRS acceptance validation orchestration
+
+phase6:
+  output_dir: data/benchmarks/phase6
+  dataset_root: data/datasets
+
+  quick:
+    max_frames: 30
+    fr3_steps: 40
+    drone_sweep: [2, 4, 12]
+    embedded_quick_sec: 30
+    skip_download: true
+
+  full:
+    max_frames: 500
+    fr3_steps: 100
+    drone_sweep: [2, 4, 6, 8, 10, 12]
+    embedded_stability_sec: 3600
+    skip_download: false
+
+  datasets:
+    euroc_sequences:
+      - MH_01_easy
+      - MH_02_easy
+      - V1_01_easy
+    tum_vi_sequences:
+      - dataset-room1_512_16
+
+  scenarios:
+    - urban_canyon
+    - forest_dense
+    - indoor_complex
+    - open_field
+
+  acceptance:
+    position_error_m: 0.5
+    ekf_improvement_pct: 30.0
+    fr3_bandwidth_pct: 70.0
+    fr3_accuracy_pct: 40.0
+    fr3_latency_ms: 20.0
+    embedded_hz: 20
+    embedded_memory_bytes: 2097152
+
+  field_tests:
+  # Manual / hardware — not automated in CI
+    gps_denied_flight: manual
+    multi_drone_field_2_12: manual

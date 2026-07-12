@@ -19,7 +19,11 @@ void mili_g2o_destroy(mili_g2o_solver_t *solver);
 int mili_g2o_add_pose(mili_g2o_solver_t *s, uint64_t id, const mili_pose_t *pose, int fixed);
 int mili_g2o_add_imu_edge(mili_g2o_solver_t *s, uint64_t i, uint64_t j, const mili_imu_sample_t *imu);
 int mili_g2o_add_visual_edge(mili_g2o_solver_t *s, uint64_t pose_id, uint64_t lm_id, float u, float v);
+int mili_g2o_add_loop_edge(mili_g2o_solver_t *s, uint64_t i, uint64_t j, const mili_vec3_t *delta_p);
 int mili_g2o_optimize(mili_g2o_solver_t *s, uint32_t max_iterations, uint32_t max_ms);
 int mili_g2o_get_pose(mili_g2o_solver_t *s, uint64_t id, mili_pose_t *out);
+int mili_g2o_clear(mili_g2o_solver_t *s);
+uint32_t mili_g2o_memory_used(const mili_g2o_solver_t *s);
+uint32_t mili_g2o_last_opt_time_us(const mili_g2o_solver_t *s);
 
 #endif

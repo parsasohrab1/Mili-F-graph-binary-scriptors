@@ -41,6 +41,7 @@ htmlcov/
 # Data outputs
 data/*.csv
 data/*.parquet
+data/benchmarks/
 !data/.gitkeep
 
 # Embedded build

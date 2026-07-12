@@ -29,4 +29,10 @@ int mili_share_decode(const uint8_t *buf, uint16_t len,
 
 bool mili_share_should_trigger(float uncertainty);
 
+int mili_share_send_uwb(const mili_share_meta_t *meta,
+                        const mili_keypoint_t *keypoints, uint8_t count);
+
+int mili_share_recv_uwb(mili_share_meta_t *meta,
+                        mili_keypoint_t *keypoints, uint8_t max_kp, uint8_t *out_count);
+
 #endif

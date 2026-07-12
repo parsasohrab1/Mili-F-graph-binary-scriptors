@@ -1,0 +1,24 @@
+# Integrated runtime — unified FR-1 + FR-2 + FR-3 pipeline
+
+integrated:
+  state_update_hz: 20
+  uncertainty_threshold_m: 0.3
+  scenario: open_field
+  dataset: synthetic
+  dataset_root: data/datasets
+  max_frames: 60
+
+  network:
+    base_port: 7700
+    max_drones: 12
+    latency_ms: 8.0
+
+  flight_controller:
+    enabled: true
+    frame_size_bytes: 69
+    transport: uart  # uart | spi | callback
+
+# Reuses phase configs for subsystem parameters
+phase2_ref: configs/phase2.yaml
+phase3_ref: configs/phase3.yaml
+phase3_sharing_ref: configs/phase3_sharing.yaml

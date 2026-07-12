@@ -4,6 +4,7 @@ import numpy as np
 import cv2
 
 from mili_vio.descriptors.bnn.api import BNNDescriptorAPI
+from mili_vio.descriptors.bnn.hal_spi import LoopbackSPITransport
 from mili_vio.descriptors.bnn.driver import SimulatedBNNDriver, SPIDMADriver, SPIConfig
 from mili_vio.descriptors.bnn.protocol import BNNStatus
 
@@ -24,7 +25,8 @@ def test_simulated_driver_extracts() -> None:
 
 
 def test_spi_driver_via_protocol() -> None:
-    driver = SPIDMADriver(SPIConfig(), backend=SimulatedBNNDriver())
+    transport = LoopbackSPITransport(SimulatedBNNDriver())
+    driver = SPIDMADriver(SPIConfig(), transport=transport)
     result = driver.extract(_test_image(), max_keypoints=30)
     assert result.status == BNNStatus.OK
     assert len(result.keypoints) <= 30

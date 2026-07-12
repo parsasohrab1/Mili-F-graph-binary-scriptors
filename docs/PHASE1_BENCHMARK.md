@@ -54,7 +54,7 @@ unzip MH_01_easy.zip -d data/datasets/euroc/
 
 | Criterion | Target | Config key |
 |-----------|--------|------------|
-| Position error (EuRoC) | < 1.0 m | `phase1.benchmark.acceptance_position_error_m` |
+| Position error (EuRoC) | < 0.5 m | `phase1.benchmark.acceptance_position_error_m` |
 | FG vs EKF improvement | ≥ 30% | `phase1.benchmark.acceptance_ekf_improvement_pct` |
 
 Results are saved to `data/benchmarks/benchmark_*.json` and `dashboard_*.png`.

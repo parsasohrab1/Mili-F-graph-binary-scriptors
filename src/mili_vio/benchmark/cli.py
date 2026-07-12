@@ -47,7 +47,7 @@ def main() -> None:
     print(f"  ATE RMSE:       {ekf.ate_rmse_m:.4f} m")
 
     print(f"\nImprovement over EKF: {comparison.improvement_pct:.1f}%")
-    print(f"Position spec (<1.0m): {'PASS' if comparison.meets_position_spec else 'FAIL'}")
+    print(f"Position spec (<0.5m): {'PASS' if comparison.meets_position_spec else 'FAIL'}")
     print(f"Improvement spec (>=30%): {'PASS' if comparison.meets_improvement_spec else 'FAIL'}")
     print(f"\nDashboard saved: {dashboard_path}")
 

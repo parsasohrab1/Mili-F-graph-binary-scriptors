@@ -27,5 +27,6 @@ int mili_fg_optimize(mili_factor_graph_t *fg, uint32_t max_ms);
 int mili_fg_get_state(mili_factor_graph_t *fg, mili_state_estimate_t *out);
 void mili_fg_memory(mili_factor_graph_t *fg, mili_memory_report_t *report);
 uint16_t mili_fg_num_poses(const mili_factor_graph_t *fg);
+uint32_t mili_fg_last_opt_time_us(const mili_factor_graph_t *fg);
 
 #endif

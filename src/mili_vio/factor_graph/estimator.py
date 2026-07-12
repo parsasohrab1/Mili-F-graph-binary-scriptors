@@ -122,7 +122,18 @@ class FR2FactorGraphEstimator:
     ) -> FR2Estimate:
         features = self.frontend.extract(image)
         feature_uvs = [f.uv for f in features]
+        return self.process_keyframe_with_features(
+            timestamp_ns, feature_uvs, imu_samples, true_pose, scenario
+        )
 
+    def process_keyframe_with_features(
+        self,
+        timestamp_ns: int,
+        feature_uvs: list[NDArray[np.float64]],
+        imu_samples: list,
+        true_pose: Pose6DOF | None = None,
+        scenario: str = "open_field",
+    ) -> FR2Estimate:
         if not self.graph.state.poses:
             pose_idx = self.graph.add_pose(timestamp_ns, np.zeros(3), np.eye(3), fixed=True)
             for uv in feature_uvs[:10]:
@@ -141,8 +152,8 @@ class FR2FactorGraphEstimator:
         self.graph.add_imu_factor(prev_idx, pose_idx, preint)
 
         noise = self._scenario_noise(scenario)
-        for f in features[: min(15, len(features))]:
-            uv_noisy = f.uv + np.random.normal(0, noise["visual_std_px"], 2)
+        for uv in feature_uvs[: min(15, len(feature_uvs))]:
+            uv_noisy = uv + np.random.normal(0, noise["visual_std_px"], 2)
             self.graph.add_visual_observation(pose_idx, uv_noisy, sqrt_info=1.0 / noise["visual_std_px"])
 
         loop_active = False
@@ -321,6 +332,19 @@ class FactorGraphEstimator:
     def __init__(self, accuracy=None, rng=None) -> None:
         self._fr2 = FR2FactorGraphEstimator(accuracy=accuracy)
         self._rng = rng
+
+    def _compute_base_error(self, scenario: str) -> float:
+        """Legacy helper for synthetic data generation."""
+        import numpy as np
+        rng = self._rng or np.random.default_rng()
+        params = {
+            "urban_canyon": (1.8, 0.12),
+            "forest_dense": (1.5, 0.15),
+            "indoor_complex": (1.2, 0.18),
+            "open_field": (2.5, 0.06),
+        }
+        shape, scale = params.get(scenario, (2.0, 0.1))
+        return float(rng.gamma(shape, scale))
 
     def estimate(
         self,

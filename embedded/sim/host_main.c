@@ -6,36 +6,68 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "mili/pipeline.h"
 #include "mili/rtos/tasks.h"
-#include "mili/memory.h"
+#include "mili/acceptance.h"
+#include "mili/mili_config.h"
 
-static int run_acceptance(mili_pipeline_t *pipe, uint32_t duration_sec)
+static void usage(const char *prog)
 {
-    int pass = 1;
+    printf("Usage: %s [duration_sec] [--stability] [--rtos-coop]\n", prog);
+    printf("  duration_sec  Simulation length (default 10)\n");
+    printf("  --stability   Run 1-hour SRS stability test (%u sec)\n", MILI_STABILITY_MIN_SEC);
+    printf("  --quick       30-second acceptance (default for CI)\n");
+    printf("  --rtos-coop   Run cooperative FreeRTOS task graph on host\n");
+}
+
+int main(int argc, char **argv)
+{
+    uint32_t duration = 10;
+    int rtos_coop = 0;
+    int stability = 0;
+
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--stability") == 0) {
+            stability = 1;
+            duration = MILI_STABILITY_MIN_SEC;
+        } else if (strcmp(argv[i], "--quick") == 0) {
+            duration = 30;
+        } else if (strcmp(argv[i], "--rtos-coop") == 0) {
+            rtos_coop = 1;
+        } else if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+            usage(argv[0]);
+            return 0;
+        } else {
+            duration = (uint32_t)atoi(argv[i]);
+        }
+    }
+
+    if (stability) {
+        printf("WARNING: 1-hour stability test — use --quick for CI\n");
+    }
+
+    printf("Mili-VIO Embedded Host Simulator\n");
+    printf("Duration: %u sec | Target: %d Hz | Mode: %s\n",
+           duration, MILI_STATE_UPDATE_HZ,
+           rtos_coop ? "FreeRTOS-coop" : "timed-sim");
+
+    mili_pipeline_t *pipe = mili_pipeline_create(0);
+    mili_pipeline_init(pipe);
+
+    if (rtos_coop) {
+        mili_tasks_run_rtos_coop(pipe, duration);
+    } else {
+        mili_tasks_run_sim(pipe, duration);
+    }
+
+    mili_acceptance_report_t report;
+    mili_acceptance_evaluate(pipe, duration, &report);
+    report.hz_jitter_ms = mili_tasks_hz_jitter_ms();
+    mili_acceptance_print(&report);
+
     const mili_profiler_t *prof = mili_pipeline_profiler(pipe);
-    mili_memory_report_t mem;
-    mili_pipeline_memory_report(pipe, &mem);
-
-    float update_hz = (float)mili_pipeline_state_updates(pipe) / (float)duration_sec;
-    printf("\n=== Acceptance Report ===\n");
-    printf("State update rate: %.1f Hz (target %d) %s\n",
-           update_hz, MILI_STATE_UPDATE_HZ,
-           update_hz >= 18.0f ? "PASS" : "FAIL");
-    if (update_hz < 18.0f) pass = 0;
-
-    printf("FG memory: %u / %u bytes %s\n",
-           mem.total_bytes, mem.budget_bytes,
-           mem.total_bytes <= MILI_FG_MEMORY_BUDGET ? "PASS" : "FAIL");
-    if (mem.total_bytes > MILI_FG_MEMORY_BUDGET) pass = 0;
-
-    printf("Uptime: %u sec (stability target %u) %s\n",
-           prof->uptime_sec, duration_sec,
-           prof->crashes == 0 ? "PASS" : "FAIL");
-    if (prof->crashes > 0) pass = 0;
-
     printf("Bottleneck stage: %u\n", mili_profiler_bottleneck_stage(prof));
-
     for (int i = 0; i < MILI_PROF_COUNT; i++) {
         const mili_prof_stat_t *s = mili_profiler_get(prof, (mili_prof_stage_t)i);
         if (s && s->count) {
@@ -44,23 +76,7 @@ static int run_acceptance(mili_pipeline_t *pipe, uint32_t duration_sec)
         }
     }
 
-    return pass;
-}
-
-int main(int argc, char **argv)
-{
-    uint32_t duration = 10;
-    if (argc > 1) duration = (uint32_t)atoi(argv[1]);
-
-    printf("Mili-VIO Embedded Host Simulator\n");
-    printf("Duration: %u sec | Target: %d Hz\n", duration, MILI_STATE_UPDATE_HZ);
-
-    mili_pipeline_t *pipe = mili_pipeline_create(0);
-    mili_pipeline_init(pipe);
-    mili_tasks_run_sim(pipe, duration);
-
-    int ok = run_acceptance(pipe, duration);
+    int ok = report.all_pass;
     mili_pipeline_destroy(pipe);
-
     return ok ? 0 : 1;
 }

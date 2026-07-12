@@ -85,7 +85,7 @@ class SlidingWindowFactorGraph:
             PoseNode(idx, timestamp_ns, position.copy(), rotation.copy(), fixed)
         )
         self._enforce_limits()
-        return idx
+        return len(self.state.poses) - 1
 
     def add_imu_factor(
         self,

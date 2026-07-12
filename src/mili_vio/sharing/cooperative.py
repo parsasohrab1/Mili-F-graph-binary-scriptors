@@ -15,6 +15,7 @@ from mili_vio.factor_graph.sliding_window import SlidingWindowFactorGraph
 from mili_vio.sharing.bandwidth import BandwidthManager
 from mili_vio.sharing.event_driven import EventDrivenSharing
 from mili_vio.sharing.network import NetworkConfig, SimulatedNetwork
+from mili_vio.sharing.transport import NetworkTransport, create_network_transport
 from mili_vio.sharing.protocol import (
     COMPRESSED_LANDMARK_SIZE,
     HEADER_SIZE,
@@ -78,7 +79,8 @@ class CooperativeCoordinator:
         self,
         drone_id: int,
         config: Optional[dict] = None,
-        network: Optional[SimulatedNetwork] = None,
+        network: Optional[NetworkTransport] = None,
+        graph: Optional[SlidingWindowFactorGraph] = None,
     ) -> None:
         self.drone_id = drone_id
         self._cfg = config or load_sharing_config()
@@ -89,12 +91,13 @@ class CooperativeCoordinator:
         self.uncertainty_threshold = trigger.get("uncertainty_threshold_m", 0.3)
         self._event_sharing = EventDrivenSharing()
         self._bandwidth = BandwidthManager(net_cfg.get("max_bandwidth_bytes_per_sec", 51200))
-        self._network = network or SimulatedNetwork(
+        self._network = network or create_network_transport(
+            "simulated",
             NetworkConfig(
                 base_port=net_cfg.get("base_port", 7700),
                 max_drones=net_cfg.get("max_drones", 12),
                 latency_ms=net_cfg.get("max_network_latency_ms", 50) / 3,
-            )
+            ),
         )
         self._matcher = BinaryMatcher()
         self._sequence = 0
@@ -103,7 +106,7 @@ class CooperativeCoordinator:
         self._landmarks_received = 0
 
         intrinsics = CameraIntrinsics(fx=458.654, fy=457.296, cx=367.215, cy=248.375)
-        self.graph = SlidingWindowFactorGraph(intrinsics=intrinsics)
+        self.graph = graph or SlidingWindowFactorGraph(intrinsics=intrinsics)
 
     def should_trigger(self, uncertainty: float) -> bool:
         return uncertainty > self.uncertainty_threshold
@@ -193,6 +196,7 @@ class MultiDroneSimulator:
         num_drones: int = 6,
         config: Optional[dict] = None,
         rng: Optional[np.random.Generator] = None,
+        network: Optional[NetworkTransport] = None,
     ) -> None:
         self._cfg = config or load_sharing_config()
         self._rng = rng or np.random.default_rng(42)
@@ -200,10 +204,23 @@ class MultiDroneSimulator:
         self.num_drones = min(num_drones, 12)
         self.steps = sim_cfg.get("steps", 100)
 
-        net = SimulatedNetwork(
-            NetworkConfig(max_drones=12, latency_ms=8.0, jitter_ms=3.0),
-            rng=self._rng,
-        )
+        p3 = self._cfg.get("phase3_sharing", {})
+        net_cfg = p3.get("network", {})
+        transport_name = p3.get("transport", "simulated")
+
+        if network is not None:
+            net = network
+        else:
+            net = create_network_transport(
+                transport_name,
+                NetworkConfig(
+                    max_drones=12,
+                    base_port=net_cfg.get("base_port", 7700),
+                    latency_ms=8.0,
+                    jitter_ms=3.0,
+                ),
+                rng=self._rng,
+            )
         self.network = net
         self.drones = [
             CooperativeCoordinator(i, self._cfg, net) for i in range(self.num_drones)

@@ -1,4 +1,5 @@
 #include "mili/sharing/sharing_embedded.h"
+#include "mili/drivers/comm_uwb.h"
 #include "mili/mili_config.h"
 #include <string.h>
 
@@ -67,4 +68,27 @@ int mili_share_decode(const uint8_t *buf, uint16_t len,
     }
     *out_count = n;
     return 0;
+}
+
+int mili_share_send_uwb(const mili_share_meta_t *meta,
+                        const mili_keypoint_t *keypoints, uint8_t count)
+{
+    uint8_t buf[512];
+    uint16_t len = 0;
+    if (mili_share_encode(meta, keypoints, count, buf, sizeof(buf), &len) != 0) {
+        return -1;
+    }
+    return mili_uwb_broadcast(buf, len);
+}
+
+int mili_share_recv_uwb(mili_share_meta_t *meta,
+                        mili_keypoint_t *keypoints, uint8_t max_kp, uint8_t *out_count)
+{
+    uint8_t buf[512];
+    uint16_t len = 0;
+    if (mili_uwb_recv(buf, sizeof(buf), &len) != 0 || len == 0) {
+        if (out_count) *out_count = 0;
+        return 0;
+    }
+    return mili_share_decode(buf, len, meta, keypoints, max_kp, out_count);
 }
