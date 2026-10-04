@@ -1,115 +1,115 @@
-# SRS — سامانه ناوبری مشارکتی Mili-VIO (Product 2)
+# SRS — Mili-VIO Cooperative Navigation System (Product 2)
 
-> سند الزامات نرم‌افزاری (SRS). برای راه‌اندازی عملیاتی [OPERATOR_GUIDE.md](OPERATOR_GUIDE.md) و برای API یکپارچه‌سازی [API_INTEGRATION.md](API_INTEGRATION.md) را ببینید.
+> Software Requirements Specification (SRS). For operational setup see [OPERATOR_GUIDE.md](OPERATOR_GUIDE.md) and for the integration API see [API_INTEGRATION.md](API_INTEGRATION.md).
 
-## ۱. مقدمه
+## 1. Introduction
 
-### ۱.۱ هدف
+### 1.1 Purpose
 
-سامانه ناوبری مشارکتی برای گروه پهپادها با Factor-Graph، توصیفگر باینری (BNN Product 1)، و اشتراک رویداد-محور در محیط GPS-denied.
+A cooperative navigation system for a drone swarm using a Factor Graph, a binary descriptor (BNN Product 1), and event-driven sharing in a GPS-denied environment.
 
-### ۱.۲ محدوده
+### 1.2 Scope
 
-- VIO مستقل از GPS (دوربین + IMU)
-- همکاری ۲–۱۲ پهپاد
-- خطای موقعیت هدف: **< ۰.۵ m** (شرایط عادی)
-- نرخ به‌روزرسانی حالت: **۲۰ Hz**
+- GPS-independent VIO (camera + IMU)
+- Cooperation of 2–12 drones
+- Target position error: **< 0.5 m** (normal conditions)
+- State update rate: **20 Hz**
 
-### ۱.۳ اصطلاحات
+### 1.3 Terminology
 
-| اختصار | معنی |
+| Acronym | Meaning |
 |--------|------|
 | VIO | Visual-Inertial Odometry |
 | FG | Factor Graph |
 | EKF | Extended Kalman Filter |
 | BNN | Binary Neural Network (Product 1) |
 
-## ۲. معماری
+## 2. Architecture
 
 ```
-گروه پهپاد (≤12) ──► اشتراک Landmark رویداد-محور
+Drone swarm (≤12) ──► Event-driven Landmark sharing
        │
        ▼
   VIO MCU (STM32H7): Camera → BNN → FG → Sharing → FC frame (69 B)
 ```
 
-## ۳. الزامات سخت‌افزاری
+## 3. Hardware Requirements
 
-| مؤلفه | مشخصات |
+| Component | Specification |
 |--------|--------|
 | MCU | STM32H7, 480 MHz |
-| دوربین | Global shutter 640×480 @ 30 fps |
+| Camera | Global shutter 640×480 @ 30 fps |
 | IMU | Bosch BMI088 |
 | RAM FG | ≤ 2 MB |
-| ارتباط | UWB / Wi-Fi, تأخیر < 50 ms |
+| Communication | UWB / Wi-Fi, latency < 50 ms |
 
-## ۴. الزامات عملکردی
+## 4. Functional Requirements
 
-### FR-1: توصیفگر باینری
+### FR-1: Binary Descriptor
 
-| معیار | هدف |
+| Criterion | Target |
 |--------|-----|
-| زمان استخراج | < 2 ms |
-| تکرارپذیری | > 90% |
-| انرژی | < 5 mJ/frame |
-| خروجی | 128-bit × ≤200 keypoint |
+| Extraction time | < 2 ms |
+| Repeatability | > 90% |
+| Energy | < 5 mJ/frame |
+| Output | 128-bit × ≤200 keypoints |
 
-**پیاده‌سازی:** `src/mili_vio/descriptors/bnn/`, `embedded/src/drivers/bnn_spi.c`
+**Implementation:** `src/mili_vio/descriptors/bnn/`, `embedded/src/drivers/bnn_spi.c`
 
-### FR-2: گراف فاکتور
+### FR-2: Factor Graph
 
-| معیار | هدف |
+| Criterion | Target |
 |--------|-----|
-| خطای موقعیت | < 0.5 m |
-| خطای جهت | < 2° |
-| زمان بهینه‌سازی | < 5 ms |
-| حافظه | ≤ 2 MB |
-| Loop closure | فعال |
+| Position error | < 0.5 m |
+| Orientation error | < 2° |
+| Optimization time | < 5 ms |
+| Memory | ≤ 2 MB |
+| Loop closure | Enabled |
 
-**سناریوهای SRS:** `urban_canyon`, `forest_dense`, `indoor_complex`, `open_field`
+**SRS scenarios:** `urban_canyon`, `forest_dense`, `indoor_complex`, `open_field`
 
-**پیاده‌سازی:** `src/mili_vio/factor_graph/`, `embedded/src/vio/g2o_embedded.c`
+**Implementation:** `src/mili_vio/factor_graph/`, `embedded/src/vio/g2o_embedded.c`
 
-### FR-3: اشتراک رویداد-محور
+### FR-3: Event-Driven Sharing
 
-| معیار | هدف |
+| Criterion | Target |
 |--------|-----|
-| آستانه عدم‌قطعیت | 0.3 m |
-| کاهش پهنای‌باند | ≥ 70% |
-| تأخیر اشتراک | < 20 ms |
-| بهبود دقت گروهی | ≥ 40% |
-| حداکثر پهپاد | 12 |
+| Uncertainty threshold | 0.3 m |
+| Bandwidth reduction | ≥ 70% |
+| Sharing latency | < 20 ms |
+| Group accuracy improvement | ≥ 40% |
+| Maximum drones | 12 |
 
-**پیاده‌سازی:** `src/mili_vio/sharing/`, `embedded/src/sharing/sharing_embedded.c`
+**Implementation:** `src/mili_vio/sharing/`, `embedded/src/sharing/sharing_embedded.c`
 
-## ۵. معیارهای پذیرش (Acceptance)
+## 5. Acceptance Criteria
 
-| بخش | تست خودکار | سند |
+| Section | Automated test | Document |
 |-----|------------|-----|
 | FG vs EKF | `mili-vio-benchmark` | PHASE1_BENCHMARK.md |
 | FR-1/2/3 SRS | `mili-vio-fr1/fr2/fr3 --validate-srs` | PHASE2/3 docs |
-| یکپارچه E2E | `mili-vio-run` | integrated.yaml |
+| Integrated E2E | `mili-vio-run` | integrated.yaml |
 | Embedded 20 Hz | `mili_host_sim --quick` | PHASE5_EMBEDDED.md |
-| Validation کامل | `mili-vio-validate` | PHASE6_VALIDATION.md |
-| میدان GPS-denied | دستی | PHASE6 field checklist |
-| گروه ۲–۱۲ میدانی | دستی | PHASE6 field checklist |
+| Full validation | `mili-vio-validate` | PHASE6_VALIDATION.md |
+| GPS-denied field | Manual | PHASE6 field checklist |
+| Field group of 2–12 | Manual | PHASE6 field checklist |
 
-## ۶. تولید داده شبیه‌سازی (legacy)
+## 6. Simulation Data Generation (legacy)
 
-کد اولیه تولید CSV در README قدیمی به پکیج منتقل شده:
+The initial CSV generation code from the old README has been moved into the package:
 
 ```bash
 mili-vio-generate --output cooperative_vio_data.csv
 ```
 
-خروجی شامل سناریوها، خطای FG vs EKF شبیه‌سازی‌شده، و پرچم‌های SRS است.
+The output includes scenarios, simulated FG vs EKF error, and SRS flags.
 
-## ۷. نوآوری نسبت به رویکرد EKF + اشتراک پیوسته
+## 7. Innovation Compared to the EKF + Continuous Sharing Approach
 
-1. **توصیفگر باینری ۱۲۸-bit** (BNN) — نه float descriptor
-2. **Factor-graph** — نه EKF به‌عنوان estimator اصلی
-3. **اشتراک Landmark رویداد-محور** — نه موقعیت خام پیوسته
+1. **128-bit binary descriptor** (BNN) — not a float descriptor
+2. **Factor graph** — not EKF as the main estimator
+3. **Event-driven Landmark sharing** — not continuous raw position
 
 ---
 
-*نسخه سند SRS: 1.0 — هم‌تراز با mili-vio `0.1.0`*
+*SRS document version: 1.0 — aligned with mili-vio `0.1.0`*

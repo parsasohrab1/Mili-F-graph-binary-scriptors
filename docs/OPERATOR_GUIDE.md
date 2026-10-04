@@ -1,31 +1,31 @@
-# راهنمای اپراتور — Mili-VIO
+# Operator Guide — Mili-VIO
 
-راهنمای نصب، کالیبراسیون، و استقرار firmware برای تیم میدانی و آزمایشگاه.
+Installation, calibration, and firmware deployment guide for field and lab teams.
 
-## ۱. پیش‌نیازها
+## 1. Prerequisites
 
-### نرم‌افزار (میز توسعه)
+### Software (development desk)
 
-| ابزار | نسخه | کاربرد |
+| Tool | Version | Purpose |
 |--------|------|--------|
-| Python | ≥ 3.10 | الگوریتم‌ها، validation، log analysis |
-| pip | جدید | `pip install -e ".[dev,vio]"` |
+| Python | ≥ 3.10 | Algorithms, validation, log analysis |
+| pip | latest | `pip install -e ".[dev,vio]"` |
 | CMake | ≥ 3.16 | build embedded host sim / firmware |
-| Git | — | clone و CI |
-| OpenOCD یا ST-Link Utility | — | فلش STM32H7 |
+| Git | — | Clone and CI |
+| OpenOCD or ST-Link Utility | — | Flashing STM32H7 |
 
-### سخت‌افزار (هر پهپاد)
+### Hardware (per drone)
 
-| مؤلفه | مشخصات |
+| Component | Specification |
 |--------|--------|
 | MCU VIO | STM32H7 @ 480 MHz |
-| دوربین | Global shutter 640×480 @ 30 fps (DCMI) |
+| Camera | Global shutter 640×480 @ 30 fps (DCMI) |
 | IMU | Bosch BMI088 (SPI) |
-| BNN | Product 1 — توصیفگر باینری 128-bit |
-| ارتباط گروهی | UWB یا Wi-Fi (UDP) |
-| FC اصلی | STM32H7 — دریافت pose از VIO board |
+| BNN | Product 1 — 128-bit binary descriptor |
+| Group communication | UWB or Wi-Fi (UDP) |
+| Main FC | STM32H7 — receives pose from VIO board |
 
-## ۲. نصب — میز توسعه
+## 2. Installation — Development Desk
 
 ```bash
 git clone <repository-url>
@@ -33,7 +33,7 @@ cd Mili-F-graph-binary-scriptors
 pip install -e ".[dev,vio]"
 ```
 
-تأیید نصب:
+Verify installation:
 
 ```bash
 mili-vio-run --dataset synthetic --frames 10
@@ -46,63 +46,63 @@ mili-vio-validate --quick --skip-embedded
 embedded\scripts\build.ps1 -Quick -Test
 ```
 
-خروجی موفق: `State update rate: 20.0 Hz … ALL PASS`
+Successful output: `State update rate: 20.0 Hz … ALL PASS`
 
-## ۳. کالیبراسیون
+## 3. Calibration
 
-### ۳.۱ دوربین (intrinsics)
+### 3.1 Camera (intrinsics)
 
-فایل پیکربندی: `configs/phase1.yaml` → `phase1.camera`
+Configuration file: `configs/phase1.yaml` → `phase1.camera`
 
-| پارامتر | EuRoC پیش‌فرض | توضیح |
+| Parameter | EuRoC default | Description |
 |---------|---------------|--------|
 | `fx`, `fy` | 458.654 / 457.296 | focal length (px) |
 | `cx`, `cy` | 367.215 / 248.375 | principal point |
-| `baseline` | 0.11 m | برای stereo (اختیاری) |
+| `baseline` | 0.11 m | For stereo (optional) |
 
-**روش کالیبراسیون:**
+**Calibration procedure:**
 
-1. چاپ checkerboard 9×6 (یا 8×6) با اندازه مربع مشخص (مثلاً 25 mm)
-2. ضبط ۲۰+ تصویر از زوایای مختلف
-3. اجرای کالیبراسیون OpenCV (`cv2.calibrateCamera`) یا ابزار Kalibr
-4. مقادیر `fx, fy, cx, cy` را در `phase1.yaml` و `embedded` camera config به‌روز کنید
+1. Print a 9×6 (or 8×6) checkerboard with a known square size (e.g., 25 mm)
+2. Capture 20+ images from different angles
+3. Run OpenCV calibration (`cv2.calibrateCamera`) or the Kalibr tool
+4. Update the `fx, fy, cx, cy` values in `phase1.yaml` and the `embedded` camera config
 
-برای TUM-VI از `camchain.yaml` همان sequence استفاده کنید.
+For TUM-VI, use the `camchain.yaml` of the same sequence.
 
-### ۳.۲ IMU (BMI088)
+### 3.2 IMU (BMI088)
 
-| پارامتر | مقدار SRS | فایل |
+| Parameter | SRS value | File |
 |---------|----------|------|
-| نرخ نمونه‌برداری | 200 Hz | `mili_config.h` → `MILI_IMU_SAMPLE_HZ` |
-| محورها | accel + gyro | `embedded/src/hal/bmi088_hal.c` |
+| Sampling rate | 200 Hz | `mili_config.h` → `MILI_IMU_SAMPLE_HZ` |
+| Axes | accel + gyro | `embedded/src/hal/bmi088_hal.c` |
 
-**کالیبراسیون IMU:**
+**IMU calibration:**
 
-1. **ساکن:** ۶۰ ثانیه ثابت روی سطح افقی → تخمین bias ژیروسکوپ و شتاب‌سنج
-2. **مقیاس:** مقایسه با مرجع (اگر IMU مرجع دارید) یا factory trim در رجیستر BMI088
-3. biasها را در `imu_preintegration` / embedded IMU driver ذخیره کنید
+1. **Static:** keep still for 60 seconds on a level surface → estimate gyroscope and accelerometer bias
+2. **Scale:** compare against a reference (if you have a reference IMU) or use the factory trim in the BMI088 register
+3. Store the biases in `imu_preintegration` / the embedded IMU driver
 
-### ۳.۳ هم‌زمان‌سازی دوربین–IMU (time sync)
+### 3.3 Camera–IMU Time Synchronization
 
-- تایم‌استمپ DCMI frame و SPI IMU باید در یک ساعت monotonic (µs) باشند
-- روی STM32: TIM + DWT (`embedded/src/hal/dwt.c`)
-- تأخیر ثابت camera–IMU را با حرکت تند پهپاد اندازه بگیرید و offset را در firmware اعمال کنید
+- The DCMI frame and SPI IMU timestamps must be on the same monotonic clock (µs)
+- On STM32: TIM + DWT (`embedded/src/hal/dwt.c`)
+- Measure the fixed camera–IMU delay with sharp drone motion and apply the offset in firmware
 
-### ۳.۴ شبکه گروهی (۲–۱۲ پهپاد)
+### 3.4 Group Network (2–12 drones)
 
 `configs/phase3_sharing.yaml`:
 
-| پارامتر | پیش‌فرض |
+| Parameter | Default |
 |---------|---------|
 | `base_port` | 7700 |
 | `max_drones` | 12 |
-| `drone_id` | 0 … 11 (یکتا per aircraft) |
+| `drone_id` | 0 … 11 (unique per aircraft) |
 
-هر پهپاد: `drone_id` یکتا + IP/port در همان subnet. برای UWB از `comm_uwb.c` AT init استفاده کنید.
+Each drone: unique `drone_id` + IP/port on the same subnet. For UWB, use the `comm_uwb.c` AT init.
 
-## ۴. فلش Firmware (STM32H7)
+## 4. Flashing Firmware (STM32H7)
 
-### ۴.۱ Build
+### 4.1 Build
 
 ```bash
 cd embedded
@@ -110,66 +110,66 @@ cmake -B build -DMILI_HOST_SIM=OFF
 cmake --build build --config Release
 ```
 
-خروجی: `build/mili_firmware` (یا `.elf`)
+Output: `build/mili_firmware` (or `.elf`)
 
-### ۴.۲ فلش با OpenOCD
+### 4.2 Flashing with OpenOCD
 
 ```bash
 openocd -f interface/stlink.cfg -f target/stm32h7x.cfg \
   -c "program build/mili_firmware.elf verify reset exit"
 ```
 
-### ۴.۳ فلش با STM32CubeProgrammer (Windows)
+### 4.3 Flashing with STM32CubeProgrammer (Windows)
 
-1. ST-Link را به SWD وصل کنید
+1. Connect the ST-Link to SWD
 2. Connect → Load `mili_firmware.elf` → Start Programming
 3. Verify + Reset
 
-### ۴.۴ پس از فلش — smoke test
+### 4.4 After Flashing — Smoke Test
 
-1. UART debug را به 115200 baud وصل کنید
-2. باید log init دوربین / IMU / BNN SPI دیده شود
-3. `mili_acceptance_print` پس از ۳۰ ثانیه: 20 Hz PASS
+1. Connect the UART debug at 115200 baud
+2. The camera / IMU / BNN SPI init log should be visible
+3. `mili_acceptance_print` after 30 seconds: 20 Hz PASS
 
 ```bash
-# روی host قبل از میدان
+# On the host before going to the field
 embedded/build/Release/mili_host_sim.exe --quick
 ```
 
-## ۵. اتصال به Flight Controller
+## 5. Connection to the Flight Controller
 
-VIO board pose را در قالب **69 بایت** به FC اصلی می‌فرستد (UART یا SPI).
+The VIO board sends the pose to the main FC in a **69-byte** format (UART or SPI).
 
-| فیلد | نوع | واحد |
+| Field | Type | Unit |
 |------|-----|------|
 | position | float×3 | m |
 | orientation | float×3 | rad (roll, pitch, yaw) |
 | uncertainty | float | m |
 | covariance_diag | float×6 | diag pose covariance |
 
-جزئیات wire format: [API_INTEGRATION.md](API_INTEGRATION.md#flight-controller-binary-frame)
+Wire format details: [API_INTEGRATION.md](API_INTEGRATION.md#flight-controller-binary-frame)
 
-## ۶. چک‌لیست قبل از پرواز
+## 6. Pre-Flight Checklist
 
-- [ ] `mili-vio-validate --quick` PASS روی میز توسعه
-- [ ] کالیبراسیون دوربین/IMU به‌روز (< ۳۰ روز)
-- [ ] `drone_id` یکتا در گروه
-- [ ] BNN Product 1 پاسخ SPI (`mili-vio-fr1 --ping --transport serial`)
-- [ ] FC frame checksum روی loopback UART تأیید شده
-- [ ] تست ۳۰ ثانیه‌ای embedded روی سخت‌افزار: 20 Hz، بدون crash
+- [ ] `mili-vio-validate --quick` PASS on the development desk
+- [ ] Camera/IMU calibration up to date (< 30 days)
+- [ ] Unique `drone_id` in the group
+- [ ] BNN Product 1 responds over SPI (`mili-vio-fr1 --ping --transport serial`)
+- [ ] FC frame checksum verified on UART loopback
+- [ ] 30-second embedded test on hardware: 20 Hz, no crash
 
-## ۷. عیب‌یابی
+## 7. Troubleshooting
 
-| علامت | احتمال | اقدام |
+| Symptom | Likely cause | Action |
 |--------|--------|--------|
-| نرخ < 20 Hz | FG سنگین / CPU | profiler stage overruns را ببینید |
-| BNN timeout | SPI wiring / clock | `MILI_BNN_SPI_CLOCK_HZ` را کاهش دهید |
-| اشتراک کار نمی‌کند | firewall / port | `mili-vio-fr3 --transport udp` تست |
-| drift زیاد | کالیبراسیون | IMU bias + camera intrinsics |
+| Rate < 20 Hz | Heavy FG / CPU | See the profiler stage overruns |
+| BNN timeout | SPI wiring / clock | Reduce `MILI_BNN_SPI_CLOCK_HZ` |
+| Sharing does not work | Firewall / port | Test with `mili-vio-fr3 --transport udp` |
+| Large drift | Calibration | IMU bias + camera intrinsics |
 | FC checksum fail | endianness | `fc_output.h` ↔ Python `pack_state_estimate` |
 
-## ۸. مراجع
+## 8. References
 
-- [API_INTEGRATION.md](API_INTEGRATION.md) — پروتکل‌ها و API
-- [PHASE5_EMBEDDED.md](PHASE5_EMBEDDED.md) — معماری firmware
-- [PHASE6_VALIDATION.md](PHASE6_VALIDATION.md) — پذیرش SRS و تست میدانی
+- [API_INTEGRATION.md](API_INTEGRATION.md) — Protocols and API
+- [PHASE5_EMBEDDED.md](PHASE5_EMBEDDED.md) — Firmware architecture
+- [PHASE6_VALIDATION.md](PHASE6_VALIDATION.md) — SRS acceptance and field testing

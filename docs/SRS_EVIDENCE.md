@@ -17,18 +17,18 @@ Automated report: `mili-vio-validate --evidence-only`
 
 ## Current Status (default checkout, no datasets)
 
-| معیار | SRS | وضعیت فعلی | سطح اثبات |
+| Criterion | SRS | Current status | Evidence level |
 |--------|-----|------------|-----------|
-| خطای موقعیت | < 0.5 m | synthetic PASS ممکن؛ میدان اثبات نشده | `synthetic` |
-| خطای جهت | < 2° | همان | `synthetic` |
-| استخراج BNN | < 2 ms | زمان chip شبیه‌سازی‌شده | `synthetic` |
-| بهینه‌سازی FG | < 5 ms | Python FG + g2o host sim | `synthetic` / `host_sim` |
-| کاهش پهنای باند | ≥ 70% | MultiDroneSimulator | `synthetic` |
-| بهبود دقت گروهی | ≥ 40% | MultiDroneSimulator | `synthetic` |
-| پهنای باند هر پهپاد | ≤ 50 KB/s | `BandwidthManager` فقط Python | `synthetic` |
-| تأخیر شبکه | < 50 ms | loopback UDP یا sim | `synthetic` / `host_sim` |
-| نرخ تخمین حالت | 20 Hz | `--quick` روی host sim | `host_sim` |
-| پایداری | > 1 ساعت | `--stability` اجرا نشده | `not_proven` |
+| Position error | < 0.5 m | synthetic PASS possible; not proven in the field | `synthetic` |
+| Orientation error | < 2° | Same | `synthetic` |
+| BNN extraction | < 2 ms | Simulated chip time | `synthetic` |
+| FG optimization | < 5 ms | Python FG + g2o host sim | `synthetic` / `host_sim` |
+| Bandwidth reduction | ≥ 70% | MultiDroneSimulator | `synthetic` |
+| Group accuracy improvement | ≥ 40% | MultiDroneSimulator | `synthetic` |
+| Per-drone bandwidth | ≤ 50 KB/s | `BandwidthManager` Python only | `synthetic` |
+| Network latency | < 50 ms | UDP loopback or sim | `synthetic` / `host_sim` |
+| State estimation rate | 20 Hz | `--quick` on host sim | `host_sim` |
+| Stability | > 1 hour | `--stability` not run | `not_proven` |
 
 ## How to Improve Proof Level
 
